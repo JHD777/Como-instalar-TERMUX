@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Debian en tu bolsillo · Guía Termux + proot-distro</title>
+<meta name="description" content="Guía paso a paso para instalar Debian sobre Android con Termux y proot-distro, probada en un Xiaomi Mi A2 Lite. Incluye errores comunes, ventajas, desventajas y alternativas.">
+<meta name="author" content="Guía Termux + Debian">
+<meta name="theme-color" content="#0b0f14">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Debian en tu bolsillo">
+<meta property="og:description" content="Instala un Linux real sobre Android sin root, sin desbloquear el bootloader y sin perder la garantía. Guía completa con errores, ventajas y alternativas.">
+<meta property="og:locale" content="es_ES">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b0f14'/%3E%3Cpath d='M18 22l10 10-10 10' stroke='%2357d9a3' stroke-width='6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M34 42h14' stroke='%2357d9a3' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/styles.css">
+<script>
+  // Aplica el tema guardado antes del primer pintado para evitar destellos.
+  try {
+    var t = JSON.parse(localStorage.getItem("db:theme"));
+    if (t !== "light" && t !== "dark") {
+      t = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    }
+    document.documentElement.setAttribute("data-theme", t);
+  } catch (e) { /* sin localStorage: queda el tema por defecto */ }
+</script>
+</head>
+<body>
+<a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+<div class="progress-read" aria-hidden="true"><span id="readBar"></span></div>
+
+<header class="topbar">
+  <div class="topbar__inner">
+    <a class="brand" href="#inicio" aria-label="Inicio">
+      <span class="brand__mark" aria-hidden="true">&gt;_</span>
+      <span class="brand__text">debian<b>·</b>bolsillo</span>
+    </a>
+
+    <div class="topbar__actions">
+      <button class="btn btn--ghost btn--icon" id="printBtn" type="button" title="Imprimir o guardar en PDF" aria-label="Imprimir o guardar en PDF">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v7H7z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="btn btn--ghost btn--icon" id="themeBtn" type="button" aria-label="Cambiar tema" title="Cambiar tema">
+        <svg class="ico-sun" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <svg class="ico-moon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a7 7 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="btn btn--primary btn--sm only-desktop" data-scroll="#requisitos" type="button">Empezar</button>
+      <button class="btn btn--ghost btn--icon only-mobile" id="navBtn" type="button" aria-controls="sidebar" aria-expanded="false" aria-label="Abrir índice">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <nav class="toc" aria-label="Índice de la guía">
+      <p class="toc__title">Contenido</p>
+      <ol class="toc__list">
+        <li><a href="#inicio">Inicio</a></li>
+        <li><a href="#ventajas">¿Para qué sirve?</a></li>
+        <li><a href="#que-es">Qué vas a instalar</a></li>
+        <li><a href="#requisitos">Requisitos</a></li>
+      </ol>
+
+      <p class="toc__title toc__title--group">Las 10 fases</p>
+      <ol class="toc__list toc__list--phases">
+        <li><a href="#fase-1"><span>1</span> Instalar Termux</a></li>
+        <li><a href="#fase-2"><span>2</span> Preparar Termux</a></li>
+        <li><a href="#fase-3"><span>3</span> El fix del crash</a></li>
+        <li><a href="#fase-4"><span>4</span> Instalar Debian</a></li>
+        <li><a href="#fase-5"><span>5</span> Lo visible</a></li>
+        <li><a href="#fase-6"><span>6</span> Tu script</a></li>
+        <li><a href="#fase-7"><span>7</span> Servidor web</a></li>
+        <li><a href="#fase-8"><span>8</span> SSH desde la laptop</a></li>
+        <li><a href="#fase-9"><span>9</span> Dejarlo cómodo</a></li>
+        <li><a href="#fase-10"><span>10</span> Verificación final</a></li>
+      </ol>
+
+      <p class="toc__title toc__title--group">Después</p>
+      <ol class="toc__list">
+        <li><a href="#errores">Errores y qué significan</a></li>
+        <li><a href="#otros">Tu celular y otros</a></li>
+        <li><a href="#alternativas">Alternativas</a></li>
+        <li><a href="#chuleta">Chuleta</a></li>
+        <li><a href="#deshacer">Deshacer todo</a></li>
+        <li><a href="#faq">Preguntas frecuentes</a></li>
+      </ol>
+
+      <div class="toc__progress" aria-live="polite">
+        <div class="toc__progress-top">
+          <span>Tu progreso</span>
+          <strong id="progressLabel">0 %</strong>
+        </div>
+        <div class="meter"><span id="progressBar"></span></div>
+        <button class="linkish" id="resetBtn" type="button">Reiniciar progreso</button>
+      </div>
+    </nav>
+  </aside>
+
+  <main id="contenido" class="content">
+
+    <!-- ================= HERO ================= -->
+    <section id="inicio" class="hero">
+      <div class="hero__grid">
+        <div class="hero__copy">
+          <p class="eyebrow">Termux · proot-distro · Debian 13</p>
+          <h1>Debian en tu bolsillo</h1>
+          <p class="lead">
+            Un Linux completo corriendo dentro de tu celular Android, sin root, sin desbloquear el bootloader
+            y sin tocar las particiones. Esta guía es el proceso completo —probado en un <strong>Xiaomi Mi A2 Lite</strong>
+            con Android 10— explicado paso por paso, con lo que significa cada comando y qué hacer cuando algo falla.
+          </p>
+
+          <div class="hero__meta">
+            <span class="chip">⏱ ~30 min</span>
+            <span class="chip">💾 2 GB libres</span>
+            <span class="chip">📶 Solo la fase 4 usa red</span>
+            <span class="chip">🔓 Sin root</span>
+            <span class="chip chip--ok">✔ Riesgo: casi nulo</span>
+          </div>
+
+          <div class="hero__cta">
+            <button class="btn btn--primary" data-scroll="#fase-1" type="button">Ir a la fase 1</button>
+            <button class="btn btn--ghost" data-scroll="#errores" type="button">Se me rompió algo</button>
+          </div>
+
+          <p class="hero__device">
+            Probado en un <b>Xiaomi Mi A2 Lite</b> (Android 10, 3/4 GB de RAM) ·
+            <a href="#otros">¿y en tu celular?</a>
+          </p>
+        </div>
+
+        <div class="hero__visual">
+          <div class="term" aria-hidden="true">
+            <div class="term__bar">
+              <span class="term__dot"></span><span class="term__dot"></span><span class="term__dot"></span>
+              <span class="term__title">termux · debian</span>
+            </div>
+            <div class="term__body">
+              <div class="term__line"><span class="term__user">~ $</span> <span class="term__cmd">deb</span></div>
+              <div class="term__line term__line--muted">Debian GNU/Linux 13 (trixie) · aarch64</div>
+              <div class="term__line"><span class="term__user">root@localhost:~#</span> <span class="term__cmd">./demo.sh</span></div>
+              <pre class="term__out">Kernel : 4.9.193-perf+
+Arch   : aarch64
+Distro : Debian GNU/Linux 13 (trixie)
+RAM    : 3.6Gi
+User   : root (uid 0)
+APT    : apt 2.9.7 (arm64)
+KVers  : Linux version 4.9.193-perf+ (xiaomi)</pre>
+              <div class="term__line term__line--cursor"><span class="term__user">root@localhost:~#</span> <span class="term__cursor"></span></div>
+            </div>
+          </div>
+          <p class="term__caption">Salida esperada de <code>./demo.sh</code> al terminar la fase 6.</p>
+        </div>
+      </div>
+
+      <div class="callout callout--info">
+        <p><strong>La idea en una frase:</strong> Termux es una terminal Linux para Android; <code>proot-distro</code>
+        descarga una Debian arm64 y la ejecuta en un espacio aislado de usuario. Comparte el kernel de Android,
+        así que no hay virtualización: es rápido de instalar y ligero de recursos, pero no es una máquina virtual.</p>
+      </div>
+    </section>
+
+    <!-- ================= POR QUÉ ================= -->
+    <section id="ventajas" class="section">
+      <p class="eyebrow">Antes de los comandos</p>
+      <h2>¿Para qué sirve esto?</h2>
+      <p class="section__lead">No es “tener Linux por tenerlo”. Sirve para cuatro cosas concretas y estorba para otras tantas.</p>
+
+      <div class="grid grid--4">
+        <article class="mini">
+          <h3>Aprender Linux</h3>
+          <p>Permisos, procesos, paquetes y red en un sistema real, sin miedo a romper una laptop.</p>
+        </article>
+        <article class="mini">
+          <h3>Un servidor pequeño</h3>
+          <p>Web local, SSH, scripts y backups que caben en el bolsillo y funcionan sin internet.</p>
+        </article>
+        <article class="mini">
+          <h3>Segunda vida</h3>
+          <p>Un celular de 2018 como servidor casero de ~2 W, en vez de un cajón.</p>
+        </article>
+        <article class="mini">
+          <h3>Practicar para la carrera</h3>
+          <p>Terminal, SSH y administración: lo mismo que hay en un servidor, pero en pequeño.</p>
+        </article>
+      </div>
+
+      <h3 class="subhead">La balanza, sin adornos</h3>
+
+      <div class="grid grid--2">
+        <div class="card card--pro">
+          <h3>Lo bueno</h3>
+          <ul class="list-ico">
+            <li><b>Riesgo casi nulo.</b> Sin root, sin desbloquear el bootloader, sin tocar particiones. Desinstalar Termux lo borra todo.</li>
+            <li><b>Cabe en el bolsillo.</b> Un Linux con <code>apt</code>, Python, SSH y tmux donde vayas, sin cargar laptop.</li>
+            <li><b>Reutiliza un celular viejo.</b> Un A2 Lite de 2018 puede quedar como servidor casero permanente por ~2 W.</li>
+            <li><b>Consumo ridículo.</b> Frente a un mini-PC o una Raspberry, no hay comparación en vatios.</li>
+            <li><b>Aprendes de verdad.</b> Sistema de archivos, permisos, procesos, redes y SSH, sin miedo a romper nada.</li>
+            <li><b>Sin dependencia de la nube.</b> Todo corre local; el servidor web funciona incluso en modo avión.</li>
+            <li><b>Comparte kernel.</b> Arranca en segundos, sin la lentitud de un emulador tipo QEMU.</li>
+          </ul>
+        </div>
+
+        <div class="card card--con">
+          <h3>Lo malo</h3>
+          <ul class="list-ico">
+            <li><b>Más lento que nativo.</b> proot intercepta llamadas al sistema: <code>apt</code> y compilaciones van entre 10 % y 40 % más lentas.</li>
+            <li><b>No hay systemd.</b> Muchos servicios (<code>docker</code>, <code>nginx</code> como daemon, <code>cron</code> clásico) no arrancan solos. Se resuelve con <code>termux-services</code> o scripts.</li>
+            <li><b>Sin root real.</b> Nada de montar particiones, cambiar el kernel, usar <code>iptables</code> o VPNs a nivel de sistema.</li>
+            <li><b>RAM y CPU limitadas.</b> 3-4 GB compartidos con Android. Compilar algo grande es inviable.</li>
+            <li><b>Calor y batería.</b> Un proceso intensivo calienta y degrada la batería si el teléfono está enchufado 24/7.</li>
+            <li><b>Android puede matarlo.</b> Optimización de batería, phantom process killer (Android 12+) y fabricantes agresivos.</li>
+            <li><b>Red local solamente.</b> SSH y el servidor no salen de tu WiFi sin túneles (Tailscale, Cloudflare Tunnel, ngrok).</li>
+            <li><b>Arquitectura arm64.</b> Algunos binarios precompilados para x86 no existen; hay que compilar o buscar alternativa.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout callout--info">
+        <p><strong>Regla práctica:</strong> si lo que quieres es <em>aprender Linux, tener un servidor pequeño, automatizar tareas o practicar SSH</em>, el celular es excelente.
+        Si necesitas <em>Docker, compilar, GPU, bases de datos pesadas o disponibilidad 24/7 real</em>, usa una VPS o una Raspberry Pi.</p>
+      </div>
+    </section>
+
+    <!-- ================= QUÉ ES ================= -->
+    <section id="que-es" class="section">
+      <h2>Qué vas a instalar (y qué no)</h2>
+      <p class="section__lead">Antes de teclear nada conviene tener claro qué hay en cada capa. Así, cuando algo falle, sabrás en qué nivel mirar.</p>
+
+      <div class="stack" role="img" aria-label="Capas: hardware, kernel de Android, Termux, proot, Debian">
+        <div class="stack__layer stack__layer--hw"><b>Tu celular</b><span>Snapdragon 625 · 3/4 GB RAM · arm64</span></div>
+        <div class="stack__arrow" aria-hidden="true">↓</div>
+        <div class="stack__layer"><b>Kernel de Android</b><span>4.9 · el mismo para todo, no se reemplaza</span></div>
+        <div class="stack__arrow" aria-hidden="true">↓</div>
+        <div class="stack__layer"><b>Termux</b><span>terminal + paquetes propios (apt de Termux)</span></div>
+        <div class="stack__arrow" aria-hidden="true">↓</div>
+        <div class="stack__layer"><b>proot</b><span>engaña al sistema de archivos: “crees que eres root”</span></div>
+        <div class="stack__arrow" aria-hidden="true">↓</div>
+        <div class="stack__layer stack__layer--deb"><b>Debian 13 (trixie)</b><span>apt, bash, python3, ssh, tmux…</span></div>
+      </div>
+
+      <div class="grid grid--3">
+        <article class="mini">
+          <h3>No es una VM</h3>
+          <p>No hay hipervisor ni kernel propio. Por eso arranca en segundos y no calienta como un emulador… pero tampoco puede cargar módulos del kernel.</p>
+        </article>
+        <article class="mini">
+          <h3>No eres root de verdad</h3>
+          <p>Dentro de Debian ves <code>root@localhost</code>, pero es un usuario simulado por proot. No puedes montar particiones ni cambiar ajustes del sistema Android.</p>
+        </article>
+        <article class="mini">
+          <h3>No hay riesgo para el teléfono</h3>
+          <p>Todo vive en <code>/data/data/com.termux</code>. Desinstalar Termux borra el Linux entero y el teléfono queda como estaba.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ================= REQUISITOS ================= -->
+    <section id="requisitos" class="section">
+      <h2>Requisitos: ¿tu celular sirve?</h2>
+      <p class="section__lead">Estos son los mínimos. El equipo de prueba es el mío, un Mi A2 Lite; si el tuyo es más nuevo o más viejo,
+      <a href="#otros">al final explico cómo revisarlo</a>. Si ya tienes Termux y Debian, salta a la <a href="#fase-5">fase 5</a>.</p>
+
+      <div class="grid grid--2">
+        <div class="card">
+          <h3>Lo que necesitas</h3>
+          <ul class="check-list">
+            <li><strong>2 GB libres.</strong> Debian ocupa ~500 MB y el resto es margen para <code>apt</code>.</li>
+            <li><strong>WiFi estable para la fase 4.</strong> La descarga de Debian es lo único que necesita red; el resto puede hacerse sin conexión.</li>
+            <li><strong>Android 7 o superior.</strong> En el A2 Lite, Android 10 va sobrado.</li>
+            <li><strong>APK de Termux de F-Droid o GitHub.</strong> Nunca el de Play Store.</li>
+            <li><strong>Ganas de teclear.</strong> Son ~15 comandos en total.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>El equipo de prueba: mi celular</h3>
+          <dl class="specs">
+            <div><dt>Modelo</dt><dd>Xiaomi Mi A2 Lite (Android One)</dd></div>
+            <div><dt>SoC</dt><dd>Qualcomm Snapdragon 625 (8× Cortex-A53 @ 2.0 GHz)</dd></div>
+            <div><dt>Arquitectura</dt><dd>arm64-v8a (compatible con paquetes <code>aarch64</code>)</dd></div>
+            <div><dt>RAM</dt><dd>3 o 4 GB — el límite real de cuántas cosas abrir a la vez</dd></div>
+            <div><dt>Sistema</dt><dd>Android 10, kernel 4.9 — sin capas del fabricante</dd></div>
+            <div><dt>Almacenamiento</dt><dd>32 / 64 GB — revisa el espacio antes de empezar</dd></div>
+          </dl>
+        </div>
+      </div>
+
+      <div class="callout callout--info">
+        <p><strong>Esto no es una receta única.</strong> La guía sirve en cualquier Android, pero el punto de partida cambia:
+        con 2 GB y Android 7 va más justo, y con Android 12 o más hace falta un ajuste extra.
+        En <a href="#otros">Tu celular y otros</a> están las cuatro comprobaciones para saber dónde estás parado antes de empezar.</p>
+      </div>
+
+      <div class="callout callout--warn">
+        <p><strong>Antes de la fase 4, comprueba el espacio.</strong> En Ajustes → Almacenamiento. Si estás por debajo de 1,5 GB libres,
+        <code>proot-distro install</code> puede quedarse a medias y dejar una instalación corrupta que hay que borrar con
+        <code>proot-distro remove debian</code>.</p>
+      </div>
+    </section>
+
+    <!-- ================= FASES ================= -->
+    <section id="fases" class="section section--phases">
+      <h2>Las 10 fases</h2>
+      <p class="section__lead">Cada fase trae: qué haces, los comandos para copiar, un <em>checkpoint</em> para saber que salió bien y el “por qué” detrás.
+      Marca la casilla al terminarla y el progreso se guarda en tu navegador.</p>
+
+      <nav class="phase-map" aria-label="Mapa de las fases">
+        <a href="#fase-1"><span>01</span> Instalar Termux</a>
+        <a href="#fase-2"><span>02</span> Preparar Termux</a>
+        <a href="#fase-3"><span>03</span> El fix del crash</a>
+        <a href="#fase-4"><span>04</span> Instalar Debian</a>
+        <a href="#fase-5"><span>05</span> Lo visible</a>
+        <a href="#fase-6"><span>06</span> Tu script</a>
+        <a href="#fase-7"><span>07</span> Servidor web</a>
+        <a href="#fase-8"><span>08</span> SSH desde la laptop</a>
+        <a href="#fase-9"><span>09</span> Dejarlo cómodo</a>
+        <a href="#fase-10"><span>10</span> Verificación final</a>
+      </nav>
+
+      <!-- FASE 1 -->
+      <article class="phase" id="fase-1" data-phase="1">
+        <header class="phase__head">
+          <span class="phase__num">01</span>
+          <div class="phase__title">
+            <h3>Instalar Termux</h3>
+            <p>La app que te da la terminal. El único paso que no se hace escribiendo.</p>
+          </div>
+          <label class="phase__done">
+            <input type="checkbox" class="phase-check" data-phase="1">
+            <span>Hecha</span>
+          </label>
+        </header>
+
+        <ol class="steps">
+          <li>
+            <p>Entra a <a href="https://f-droid.org/packages/com.termux/" target="_blank" rel="noopener noreferrer">f-droid.org/packages/com.termux</a>
+            o a <a href="https://github.com/termux/termux-app/releases" target="_blank" rel="noopener noreferrer">GitHub Releases</a>
+            y descarga el APK <strong>universal</strong> o <strong>arm64-v8a</strong> (el que diga <em>release</em>, no <em>debug</em>, y no x86).</p>
+          </li>
+          <li><p>Instálalo. Android te pedirá permitir la instalación desde esa fuente: acepta solo para el navegador que uses.</p></li>
+          <li><p>Abre Termux y espera a que termine el <em>bootstrap</em> hasta ver el prompt <code>~ $</code>. La primera vez tarda uno o dos minutos.</p></li>
+        </ol>
+
+        <div class="callout callout--danger">
+          <p><strong>Nunca desde Play Store.</strong> Esa versión está congelada desde 2020, apunta a repositorios muertos y
+          <code>pkg install</code> falla con <em>“Unable to locate package”</em>. Es el error número uno de esta guía y no tiene arreglo limpio: desinstala y vuelve a instalar desde F-Droid.</p>
+        </div>
+
+        <div class="checkpoint"><b>Checkpoint</b> Ves un prompt como <code>~ $</code> y <code>echo $PREFIX</code> imprime <code>/data/data/com.termux/files/usr</code>.</div>
+      </article>
+
+      <!-- FASE 2 -->
+      <article class="phase" id="fase-2" data-phase="2">
+        <header class="phase__head">
+          <span class="phase__num">02</span>
+          <div class="phase__title">
+            <h3>Preparar Termux</h3>
+            <p>Actualizar paquetes, instalar el responsable de todo y evitar que Android duerma el proceso.</p>
+          </div>
+          <label class="phase__done">
+            <input type="checkbox" class="phase-check" data-phase="2">
+            <span>Hecha</span>
+          </label>
+        </header>
+
+        <div class="cmd">
+          <div class="cmd__bar"><span class="cmd__file">Termux</span><button class="copy" type="button">Copiar</button></div>
+          <pre><code>pkg update &amp;&amp; pkg upgrade -y
+pkg install -y proot-distro
+termux-wake-lock</code></pre>
+        </div>
+
+        <div class="explain">
+          <div><code>pkg update &amp;&amp; pkg upgrade -y</code><span>Sincroniza la lista de paquetes y actualiza lo instalado. Responde <em>sí</em> a reemplazar configuraciones si pregunta.</span></div>
+          <div><code>proot-distro</code><span>El paquete que descarga, guarda y lanza distribuciones Linux. Es un envoltorio de <code>proot</code> con menús.</span></div>
+          <div><code>termux-wake-lock</code><span>Pide a Android que no congele Termux cuando apagues la pantalla. Sin esto, una descarga larga o un servidor se mueren al bloquear el teléfono.</span></div>
+        </div>
+
+        <div class="callout callout--warn">
+          <p><strong>Si <code>pkg update</code> falla con 403, 404 o se queda en “Downloading”:</strong> el mirror está caído.
+          Ejecuta <code>termux-change-repo</code>, elige otro espejo (por ejemplo <em>Grimler</em> o <em>Mirrors by BFSU</em>) y repite.</p>
+        </div>
+
+        <div class="checkpoint"><b>Checkpoint</b> <code>proot-distro --help</code> lista los comandos (<code>install</code>, <code>login</code>, <code>remove</code>…) sin errores.</div>
+      </article>
+
+      <!-- FASE 3 -->
+      <article class="phase" id="fase-3" data-phase="3">
+        <header class="phase__head">
+          <span class="phase__num">03</span>
+          <div class="phase__title">
+            <h3>El fix que evita el crash</h3>
+            <p>Una variable de entorno que desactiva <code>seccomp</code> dentro de proot. Es lo que resuelve el <em>assertion</em> más famoso de este montaje.</p>
+          </div>
+          <label class="phase__done">
+            <input type="checkbox" class="phase-check" data-phase="3">
+            <span>Hecha</span>
+          </label>
+        </header>
+
+        <div class="cmd">
+          <div class="cmd__bar"><span class="cmd__file">Termux</span><button class="copy" type="button">Copiar</button></div>
+          <pre><code>echo 'export PROOT_NO_SECCOMP=1' &gt;&gt; ~/.bashrc
+export PROOT_NO_SECCOMP=1</code></pre>
+        </div>
+
+        <div class="explain">
+          <div><code>PROOT_NO_SECCOMP=1</code><span>Le dice a proot que no use el filtro <code>seccomp</code> del kernel. Algunos kernels de Android (como el 4.9 del A2 Lite) no exponen esa llamada como proot espera y el proceso aborta con <code>IS_IN_SYSENTER</code>.</span></div>
+          <div><code>&gt;&gt; ~/.bashrc</code><span>Lo deja permanente: se aplica cada vez que abres Termux. Sin esto tendrías que exportarlo a mano en cada sesión.</span></div>
+        </div>
+
+        <details class="err-inline">
+          <summary>¿Qué era exactamente el error <code>IS_IN_SYSENTER</code>?</summary>
+          <p>Un <em>assertion failed</em> dentro de proot: el programa comprobaba que estaba ejecutándose en una llamada al sistema concreta y el kernel de Android lo interrumpía de una forma distinta. No es un fallo tuyo ni del teléfono: es una incompatibilidad conocida entre proot y ciertos kernels. Desactivar <code>seccomp</code> evita esa comprobación y el resto funciona igual.</p>
+        </details>
+
+        <div class="checkpoint"><b>Checkpoint</b> <code>echo $PROOT_NO_SECCOMP</code> devuelve <code>1</code>.</div>
+      </article>
+
+      <!-- FASE 4 -->
+      <article class="phase" id="fase-4" data-phase="4">
+        <header class="phase__head">
+          <span class="phase__num">04</span>
+          <div class="phase__title">
+            <h3>Instalar y entrar a Debian</h3>
+            <p>La única fase que descarga grande (~200 MB). Después de esto ya tienes Linux.</p>
+          </div>
+          <label class="phase__done">
+            <input type="checkbox" class="phase-check" data-phase="4">
+            <span>Hecha</span>
+          </label>
+        </header>
+
+        <div class="cmd">
+          <div class="cmd__bar"><span class="cmd__file">Termux</span><button class="copy" type="button">Copiar</button></div>
+          <pre><code>proot-distro install debian
+proot-distro login debian</code></pre>
+        </div>
+
+        <div class="explain">
+          <div><code>install debian</code><span>Descarga la imagen oficial de Debian para arm64 (el equivalente a <code>debian:latest</code> en Docker Hub), la descomprime y la deja lista. Tarda entre 3 y 10 minutos según el WiFi.</span></div>
+          <div><code>login debian</code><span>Entra al sistema. El prompt cambia a <code>root@localhost:~#</code>: la almohadilla significa que dentro de Debian eres root (simulado). <code>pd</code> es el alias corto de <code>proot-distro</code> en las versiones recientes.</span></div>
+        </div>
+
+        <div class="callout callout--info">
+          <p><strong>Para salir de Debian</strong> escribe <code>exit</code>. Para volver a entrar, <code>proot-distro login debian</code>. Nada se borra al salir: es como cerrar una sesión.</p>
+        </div>
+
+        <div class="checkpoint"><b>Checkpoint</b> Estás en <code>root@localhost:~#</code> y <code>cat /etc/os-release</code> dice <code>Debian GNU/Linux 13 (trixie)</code>.</div>
+      </article>
+
+      <!-- FASE 5 -->
+      <article class="phase" id="fase-5" data-phase="5">
+        <header class="phase__head">
+          <span class="phase__num">05</span>
+          <div class="phase__title">
+            <h3>Instalar lo visible</h3>
+            <p>Las herramientas que hacen que la terminal se sienta como un sistema y no como un experimento.</p>
+          </div>
+          <label class="phase__done">
+            <input type="checkbox" class="phase-check" data-phase="5">
+            <span>Hecha</span>
+          </label>
+        </header>
+
+        <div class="cmd">
+          <div class="cmd__bar"><span class="cmd__file">Debian (root@localhost)</span><button class="copy" type="button">Copiar</button></div>
+          <pre><code>apt update &amp;&amp; apt upgrade -y
+apt install -y fastfetch procps nano tmux
+fastfetch</code></pre>
+        </div>
+
+        <div class="explain">
+          <div><code>apt update</code><span>Lee los índices de Debian. Es distinto de <code>apt upgrade</code>, que instala las actualizaciones.</span></div>
+          <div><code>fastfetch</code><span>Muestra el logo de Debian y los datos del sistema: kernel, RAM, CPU. Es la prueba visual de que estás en Linux.</span></div>
+          <div><code>procps</code><span>Trae <code>free</code>, <code>ps</code> y <code>top</code>. Sin este paquete, tu script fallaría en la línea de la RAM.</span></div>
+          <div><code>tmux</code><span>Multiplexor de terminal: deja procesos corriendo en segundo plano y vuelve a ellos. Clave para el servidor web.</span></div>
+          <div><code>nano</code><span>Editor de texto simple, para editar archivos sin pelearte con <code>vi</code>.</span></div>
+        </div>
+
+        <div class="callout callout--warn">
+          <p>Si <code>fastfetch</code> no aparece en los repos de tu versión de Debian, prueba <code>apt install screenfetch</code> (o <code>neofetch</code> en versiones antiguas). Hacen lo mismo para lo que necesitas aquí.</p>
+        </div>
+
+        <div class="checkpoint"><b>Checkpoint</b> <code>fastfetch</code> dibuja el logo de Debian y lista tu hardware. <code>dpkg -l | wc -l</code> da 300 o más.</div>
+      </article>
+
+      <!-- FASE 6 -->
+      <article class="phase" id="fase-6" data-phase="6">
+        <header class="phase__head">
+          <span class="phase__num">06</span>
+          <div class="phase__title">
+            <h3>Tu script</h3>
+            <p>Un archivo que imprime la identidad completa del sistema. Es tu “¿sigue vivo?” de cada día.</p>
+          </div>
+          <label class="phase__done">
+            <input type="checkbox" class="phase-check" data-phase="6">
+            <span>Hecha</span>
+          </label>
+        </header>
+
+        <div class="cmd">
+          <div class="cmd__bar"><span class="cmd__file">Debian · crear demo.sh</span><button class="copy" type="button">Copiar</button></div>
+          <pre><code>cat &gt; demo.sh &lt;&lt;'EOF'
+#!/bin/bash
+echo "Kernel : $(uname -r)"
+echo "Arch   : $(uname -m)"
+echo "Distro : $(. /etc/os-release &amp;&amp; echo "$PRETTY_NAME")"
+echo "RAM    : $(free -h | awk '/Mem:/{print $2}')"
+echo "User   : $(whoami) (uid $(id -u))"
+echo "APT    : $(apt --version | head -1)"
+echo "KVers  : $(cat /proc/version)"
+EOF
+chmod +x demo.sh
+./demo.sh</code></pre>
+        </div>
+
+        <div class="explain">
+          <div><code>&lt;&lt;'EOF'</code><span>Las comillas simples son importantes: evitan que bash expanda <code>$(...)</code> al crear el archivo. Así los comandos se ejecutan cuando corres el script, no antes.</span></div>
+          <div><code>chmod +x</code><span>Le da permiso de ejecución. Sin esto: <em>“bash: ./demo.sh: Permission denied”</em>.</span></div>
+          <div><code>uname -r</code><span>Debe mostrar un kernel con <code>-perf+</code> de Xiaomi: es la prueba de que Debian usa el kernel de Android, no uno propio.</span></div>
+        </div>
+
+        <div class="callout callout--danger">
+          <p><strong>Si ves <code>/bin/bash^M: bad interpreter</code>:</strong> el archivo se guardó con saltos de línea de Windows (CRLF).
+          Arréglalo con <code>sed -i 's/\r$//' demo.sh</code> o vuelve a crearlo pegando el bloque directamente en Termux.</p>
+        </div>
+
+        <div class="checkpoint"><b>Checkpoint</b> La línea <code>KVers</code> contiene <code>-perf+</code>. Ese es el kernel Android de Xiaomi: quedó demostrado que todo comparte el mismo núcleo.</div>
+      </article>
+
+      <!-- FASE 7 -->
+      <article class="phase" id="fase-7" data-phase="7">
+        <header class="phase__head">
+          <span class="phase__num">07</span>
+          <div class="phase__title">
+            <h3>Servidor web (opcional)</h3>
+            <p>Servir una página desde el teléfono y verla en su propio Chrome.</p>
+          </div>
+          <label class="phase__done">
+            <input type="checkbox" class="phase-check" data-phase="7">
+            <span>Hecha</span>
+          </label>
+        </header>
+
+        <div class="cmd">
+          <div class="cmd__bar"><span class="cmd__file">Debian</span><button class="copy" type="button">Copiar</button></div>
+          <pre><code>mkdir -p /root/site
+echo "&lt;h1&gt;Servido desde el Mi A2 Lite&lt;/h1&gt;" &gt; /root/site/index.html
+tmux new -s web
+python3 -m http.server 8080 --directory /root/site</code></pre>
+        </div>
+
+        <p>Abre Chrome y visita <code>http://localhost:8080</code>. Para soltar la sesión sin matarla: <kbd>Ctrl</kbd>+<kbd>B</kbd>, luego <kbd>D</kbd>.
+        Para volver: <code>tmux attach -t web</code>.</p>
+
+        <div class="explain">
+          <div><code>tmux new -s web</code><span>Crea una sesión llamada <em>web</em>. Si cierras Termux o se cae la conexión, el servidor sigue vivo.</span></div>
+          <div><code>http.server</code><span>Servidor de archivos de Python, incluido en la librería estándar. No sirve para producción, pero es perfecto para probar.</span></div>
+        </div>
+
+        <div class="checkpoint"><b>Checkpoint</b> Chrome del celular carga el titular. En modo avión también funciona: es local, no sale a internet.</div>
+      </article>
+
+      <!-- FASE 8 -->
+      <article class="phase" id="fase-8" data-phase="8">
+        <header class="phase__head">
+          <span class="phase__num">08</span>
+          <div class="phase__title">
+            <h3>SSH desde la laptop (opcional)</h3>
+            <p>Controlar el Debian del celular desde el teclado de la computadora.</p>
+          </div>
+          <label class="phase__done">
+            <input type="checkbox" class="phase-check" data-phase="8">
+            <span>Hecha</span>
+          </label>
+        </header>
+
+        <div class="cmd">
+          <div class="cmd__bar"><span class="cmd__file">Termux (sale de Debian primero con exit)</span><button class="copy" type="button">Copiar</button></div>
+          <pre><code>pkg install -y openssh
+passwd
+sshd
+whoami</code></pre>
+        </div>
+
+        <p>Averigua la IP del teléfono en Ajustes → WiFi → tu red → <em>Dirección IP</em> (algo como <code>192.168.1.47</code>). Luego desde PowerShell en la laptop:</p>
+
+        <div class="cmd">
+          <div class="cmd__bar"><span class="cmd__file">PowerShell (laptop)</span><button class="copy" type="button">Copiar</button></div>
+          <pre><code>ssh -p 8022 u0_a234@192.168.1.47</code></pre>
+        </div>
+
+        <p>Cambia <code>u0_a234</code> por lo que devolvió <code>whoami</code>, y la IP por la tuya. Termux usa el puerto <strong>8022</strong>, no el 22.
+        Una vez dentro: <code>proot-distro login debian</code> y estás en Debian, pero escribiendo desde la laptop.</p>
+
+        <div class="explain">
+          <div><code>passwd</code><span>Define la contraseña de tu usuario de Termux. Anótala: SSH la pide y no hay recuperación.</span></div>
+          <div><code>sshd</code><span>Arranca el servidor SSH. No sobrevive a cerrar Termux; si lo quieres permanente, mira <code>termux-services</code> o un script de arranque con Termux:Boot.</span></div>
+        </div>
+
+        <div class="checkpoint"><b>Checkpoint</b> Desde la laptop aparece el prompt de Termux. Con <code>proot-distro login debian</code> dentro, trabajas en Debian sin tocar el celular.</div>
+      </article>
+
+      <!-- FASE 9 -->
+      <article class="phase" id="fase-9" data-phase="9">
+        <header class="phase__head">
+          <span class="phase__num">09</span>
+          <div class="phase__title">
+            <h3>Dejarlo cómodo</h3>
+            <p>Un alias para escribir <code>deb</code> en vez de un comando largo.</p>
+          </div>
+          <label class="phase__done">
+            <input type="checkbox" class="phase-check" data-phase="9">
+            <span>Hecha</span>
+          </label>
+        </header>
+
+        <div class="cmd">
+          <div class="cmd__bar"><span class="cmd__file">Termux</span><button class="copy" type="button">Copiar</button></div>
+          <pre><code>echo "alias deb='proot-distro login debian'" &gt;&gt; ~/.bashrc</code></pre>
+        </div>
+
+        <div class="cmd">
+          <div class="cmd__bar"><span class="cmd__file">Debian (opcional, saludo automático)</span><button class="copy" type="button">Copiar</button></div>
+          <pre><code>echo 'fastfetch' &gt;&gt; ~/.bashrc</code></pre>
+        </div>
+
+        <p>Con eso, abrir Termux y escribir <code>deb</code> te deja dentro de Debian con el logo ya dibujado. Si añadiste <code>fastfetch</code> al final del <code>.bashrc</code> de Debian, también lo verás al entrar.</p>
+
+        <div class="checkpoint"><b>Checkpoint</b> Cierras Termux, lo abres, escribes <code>deb</code> y aparece Debian.</div>
+      </article>
+
+      <!-- FASE 10 -->
+      <article class="phase" id="fase-10" data-phase="10">
+        <header class="phase__head">
+          <span class="phase__num">10</span>
+          <div class="phase__title">
+            <h3>Verificación final</h3>
+            <p>Cinco pruebas que demuestran que el montaje es real y no una demo que se cae al reiniciar.</p>
+          </div>
+          <label class="phase__done">
+            <input type="checkbox" class="phase-check" data-phase="10">
+            <span>Hecha</span>
+          </label>
+        </header>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Prueba</th><th>Cómo</th><th>Qué debe pasar</th></tr></thead>
+            <tbody>
+              <tr><td>Persistencia</td><td>Reinicia el celular y corre <code>./demo.sh</code></td><td>Sigue funcionando igual</td></tr>
+              <tr><td>Es local</td><td>Modo avión + <code>localhost:8080</code></td><td>La página carga</td></tr>
+              <tr><td>En tu red</td><td>Laptop → <code>http://IP:8080</code></td><td>La página carga</td></tr>
+              <tr><td>Remoto</td><td><code>ssh -p 8022</code></td><td>Prompt de Termux</td></tr>
+              <tr><td>Real</td><td><code>dpkg -l | wc -l</code></td><td>300 o más paquetes</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="checkpoint"><b>Checkpoint</b> Las cinco pruebas pasan. Ya tienes un servidor Linux de bolsillo, documentado y reproducible.</div>
+      </article>
+    </section>
+
+    <!-- ================= ERRORES ================= -->
+    <section id="errores" class="section">
+      <div class="section__head">
+        <div>
+          <h2>Errores y qué significan</h2>
+          <p class="section__lead">Los mensajes que de verdad aparecen en este montaje, con su causa y su arreglo. Si el tuyo no está, búscalo abajo.</p>
+        </div>
+        <div class="search">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input type="search" id="errSearch" placeholder="Buscar error…" aria-label="Buscar error" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="errs" id="errList">
+
+        <details class="err">
+          <summary><span class="err__tag err__tag--danger">Crash</span> <code>assertion "IS_IN_SYSENTER" failed</code></summary>
+          <div class="err__body">
+            <p><b>Qué pasó:</b> proot aborta al entrar en Debian, a veces incluso antes del prompt.</p>
+            <p><b>Por qué:</b> ciertos kernels de Android (el 4.9 del A2 Lite entre ellos) manejan las llamadas al sistema de una forma que el filtro <code>seccomp</code> de proot no espera. Es una incompatibilidad conocida, no un daño.</p>
+            <p><b>Solución:</b> exporta la variable antes de entrar y déjala permanente.</p>
+            <div class="cmd cmd--mini"><div class="cmd__bar"><span class="cmd__file">Termux</span><button class="copy" type="button">Copiar</button></div><pre><code>export PROOT_NO_SECCOMP=1
+proot-distro login debian</code></pre></div>
+          </div>
+        </details>
+
+        <details class="err">
+          <summary><span class="err__tag err__tag--danger">Instalación</span> <code>Unable to locate package &lt;x&gt;</code></summary>
+          <div class="err__body">
+            <p><b>Qué pasó:</b> <code>pkg install</code> no encuentra el paquete.</p>
+            <p><b>Por qué:</b> casi siempre es el Termux de Play Store (repos muertos), o un mirror caído, o una errata en el nombre.</p>
+            <p><b>Solución:</b> si vienes de Play Store, desinstala e instala desde F-Droid. Si no, cambia de mirror y sincroniza.</p>
+            <div class="cmd cmd--mini"><div class="cmd__bar"><span class="cmd__file">Termux</span><button class="copy" type="button">Copiar</button></div><pre><code>termux-change-repo
+pkg update</code></pre></div>
+          </div>
+        </details>
+
+        <details class="err">
+          <summary><span class="err__tag err__tag--warn">Red</span> Se queda en <code>Downloading…</code> o da 403 / 404</summary>
+          <div class="err__body">
+            <p><b>Por qué:</b> el mirror elegido está bloqueado, saturado o caído. Pasa seguido con espejos universitarios.</p>
+            <p><b>Solución:</b> <code>termux-change-repo</code>, elige <em>Mirrors by BFSU</em> o <em>Grimler</em>, y repite. Si sigue, prueba con otra red (datos móviles).</p>
+          </div>
+        </details>
+
+        <details class="err">
+          <summary><span class="err__tag err__tag--warn">Espacio</span> <code>No space left on device</code></summary>
+          <div class="err__body">
+            <p><b>Por qué:</b> el rootfs de Debian (~500 MB) no cabe donde quedaba espacio, o <code>apt</code> necesita más para su caché.</p>
+            <p><b>Solución:</b> libera espacio, borra instalaciones a medias y limpia cachés.</p>
+            <div class="cmd cmd--mini"><div class="cmd__bar"><span class="cmd__file">Termux</span><button class="copy" type="button">Copiar</button></div><pre><code>proot-distro remove debian
+pkg clean
+proot-distro install debian</code></pre></div>
+            <p>Dentro de Debian, <code>apt clean</code> borra los <code>.deb</code> descargados.</p>
+          </div>
+        </details>
+
+        <details class="err">
+          <summary><span class="err__tag err__tag--warn">APT</span> <code>Could not get lock /var/lib/dpkg/lock-frontend</code></summary>
+          <div class="err__body">
+            <p><b>Por qué:</b> otro <code>apt</code> sigue corriendo (por ejemplo, una actualización anterior que no terminó), o el proceso murió dejando el lock.</p>
+            <p><b>Solución:</b> espera a que termine. Si no hay nada corriendo, comprueba y elimina el lock.</p>
+            <div class="cmd cmd--mini"><div class="cmd__bar"><span class="cmd__file">Debian</span><button class="copy" type="button">Copiar</button></div><pre><code>ps aux | grep -i apt
+rm /var/lib/dpkg/lock-frontend
+dpkg --configure -a</code></pre></div>
+          </div>
+        </details>
+
+        <details class="err">
+          <summary><span class="err__tag err__tag--warn">APT</span> <code>dpkg was interrupted</code></summary>
+          <div class="err__body">
+            <p><b>Por qué:</b> una instalación se cortó a mitad (se cerró Termux, se agotó la batería, se llenó el disco).</p>
+            <p><b>Solución:</b> <code>dpkg --configure -a</code> y luego <code>apt install -f</code> para reparar dependencias.</p>
+          </div>
+        </details>
+
+        <details class="err">
+          <summary><span class="err__tag err__tag--warn">DNS</span> <code>Temporary failure resolving 'deb.debian.org'</code></summary>
+          <div class="err__body">
+            <p><b>Por qué:</b> Debian dentro de proot no hereda bien el DNS de Android, o no hay red en ese momento.</p>
+            <p><b>Solución:</b> verifica la conexión y escribe un DNS público.</p>
+            <div class="cmd cmd--mini"><div class="cmd__bar"><span class="cmd__file">Debian</span><button class="copy" type="button">Copiar</button></div><pre><code>echo "nameserver 1.1.1.1" &gt; /etc/resolv.conf
+ping -c 2 1.1.1.1</code></pre></div>
+          </div>
+        </details>
+
+        <details class="err">
+          <summary><span class="err__tag err__tag--danger">Script</span> <code>/bin/bash^M: bad interpreter</code></summary>
+          <div class="err__body">
+            <p><b>Por qué:</b> el archivo se creó en Windows y tiene finales de línea CRLF. Linux no reconoce el <code>\r</code>.</p>
+            <p><b>Solución:</b> <code>sed -i 's/\r$//' demo.sh</code> o <code>dos2unix demo.sh</code>.</p>
+          </div>
+        </details>
+
+        <details class="err">
+          <summary><span class="err__tag err__tag--warn">Permisos</span> <code>bash: ./demo.sh: Permission denied</code></summary>
+          <div class="err__body">
+            <p><b>Por qué:</b> el archivo no tiene bit de ejecución.</p>
+            <p><b>Solución:</b> <code>chmod +x demo.sh</code>. Si el archivo está en <code>/sdcard</code>, cópialo al home: ahí las particiones compartidas no permiten ejecutar.</p>
+          </div>
+        </details>
+
+        <details class="err">
+          <summary><span class="err__tag err__tag--danger">Android 12+</span> Termux se cierra solo o mata los procesos</summary>
+          <div class="err__body">
+            <p><b>Por qué:</b> Android 12 introdujo el <em>phantom process killer</em>: mata procesos hijos que considera “fantasma”. Afecta a proot en cualquier celular moderno, no solo al tuyo (el A2 Lite es Android 10, así que no lo sufre).</p>
+            <p><b>Solución:</b> desactívalo por ADB una vez.</p>
+            <div class="cmd cmd--mini"><div class="cmd__bar"><span class="cmd__file">PC con ADB</span><button class="copy" type="button">Copiar</button></div><pre><code>adb shell settings put global settings_enable_monitor_phantom_procs false</code></pre></div>
+            <p>Complementa con <code>termux-wake-lock</code> y quitando la optimización de batería a Termux en Ajustes.</p>
+          </div>
+        </details>
+
+        <details class="err">
+          <summary><span class="err__tag err__tag--warn">Batería</span> Todo se detiene al apagar la pantalla</summary>
+          <div class="err__body">
+            <p><b>Por qué:</b> el ahorro de energía de Android congela la app en segundo plano.</p>
+            <p><b>Solución:</b> <code>termux-wake-lock</code>, y en Ajustes → Apps → Termux → Batería, elige <em>Sin restricciones</em>. En MIUI/One UI además hay que bloquear la app en la lista de “no cerrar”.</p>
+          </div>
+        </details>
+
+        <details class="err">
+          <summary><span class="err__tag err__tag--warn">SSH</span> <code>Connection refused</code> o <code>Permission denied</code></summary>
+          <div class="err__body">
+            <p><b>Connection refused:</b> <code>sshd</code> no está corriendo, o estás usando el puerto 22 en vez de 8022, o el teléfono y la laptop están en redes distintas.</p>
+            <p><b>Permission denied:</b> usuario o contraseña incorrectos. El usuario es lo que imprime <code>whoami</code> (tipo <code>u0_a234</code>), no <code>root</code>.</p>
+            <p><b>Solución:</b> revisa que <code>sshd</code> siga vivo con <code>pgrep sshd</code> y que la IP sea la actual (cambia al reconectar el WiFi).</p>
+          </div>
+        </details>
+
+        <details class="err">
+          <summary><span class="err__tag err__tag--warn">Red local</span> <code>http://IP:8080</code> no abre desde la laptop</summary>
+          <div class="err__body">
+            <p><b>Por qué:</b> el servidor escucha solo en <code>localhost</code> dentro de proot, o el router aísla a los clientes (AP isolation).</p>
+            <p><b>Solución:</b> arranca el servidor escuchando en todas las interfaces y comprueba el firewall del router.</p>
+            <div class="cmd cmd--mini"><div class="cmd__bar"><span class="cmd__file">Debian</span><button class="copy" type="button">Copiar</button></div><pre><code>python3 -m http.server 8080 --bind 0.0.0.0 --directory /root/site</code></pre></div>
+          </div>
+        </details>
+
+        <details class="err">
+          <summary><span class="err__tag err__tag--warn">Paquetes</span> <code>fastfetch: command not found</code></summary>
+          <div class="err__body">
+            <p><b>Por qué:</b> el paquete no está en los repos de tu versión de Debian, o <code>apt update</code> nunca corrió.</p>
+            <p><b>Solución:</b> <code>apt update</code> primero; si sigue faltando, <code>apt install screenfetch</code>.</p>
+          </div>
+        </details>
+
+        <details class="err">
+          <summary><span class="err__tag err__tag--warn">Entorno</span> <code>proot-distro: command not found</code></summary>
+          <div class="err__body">
+            <p><b>Por qué:</b> el paquete no se instaló (falló la fase 2) o estás dentro de Debian, donde <code>proot-distro</code> no existe.</p>
+            <p><b>Solución:</b> sal de Debian con <code>exit</code> y ejecuta <code>pkg install proot-distro</code> en Termux.</p>
+          </div>
+        </details>
+
+      </div>
+
+      <p class="empty" id="errEmpty" hidden>No hay errores que coincidan con esa búsqueda.</p>
+    </section>
+
+    <!-- ================= OTROS CELULARES ================= -->
+    <section id="otros" class="section">
+      <h2>Tu celular y otros modelos</h2>
+      <p class="section__lead">Todo lo anterior aplica a cualquier Android arm64, pero no a todos por igual: cambia la RAM, la versión de Android y
+      las trabas del fabricante. Si vas a seguir esta guía en tu propio celular, empieza por aquí.</p>
+
+      <h3 class="subhead">Las cuatro comprobaciones, antes de teclear nada</h3>
+
+      <div class="grid grid--4">
+        <article class="mini">
+          <h3>1 · Modelo y Android</h3>
+          <p>Ajustes → Acerca del teléfono. La versión de Android decide si necesitas el ajuste del phantom process killer (12 o más).</p>
+        </article>
+        <article class="mini">
+          <h3>2 · Memoria RAM</h3>
+          <p>Ajustes → Acerca del teléfono → RAM, o una app como DevCheck. Con 2 GB funciona, pero sin escritorio gráfico.</p>
+        </article>
+        <article class="mini">
+          <h3>3 · Espacio libre</h3>
+          <p>Ajustes → Almacenamiento. Mínimo 2 GB, ideal 8 GB. Si estás por debajo de 1,5 GB, la fase 4 falla.</p>
+        </article>
+        <article class="mini">
+          <h3>4 · Arquitectura</h3>
+          <p>Ya con Termux: <code>uname -m</code>. <code>aarch64</code> es arm64 (lo normal); <code>armv7l</code> es 32 bits.</p>
+        </article>
+      </div>
+
+      <div class="callout callout--warn">
+        <p><strong>La comprobación que más importa es la cuarta.</strong> Si <code>uname -m</code> devuelve <code>aarch64</code>, esta guía va tal cual.
+        Si devuelve <code>armv7l</code>, el celular es de 32 bits y la imagen Debian arm64 no arranca: hay que buscar una imagen <code>armhf</code>/<code>armv7</code>
+        (más vieja y con menos paquetes disponibles).</p>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Requisito</th><th>Mínimo</th><th>Recomendado</th><th>Por qué</th></tr></thead>
+          <tbody>
+            <tr><td>Android</td><td>7</td><td>10 o más</td><td>Termux moderno exige 7+; a partir de 12 hay que lidiar con el phantom process killer.</td></tr>
+            <tr><td>RAM</td><td>2 GB</td><td>4 GB o más</td><td>Debian en reposo usa ~200 MB, pero <code>apt</code> y Python necesitan aire.</td></tr>
+            <tr><td>Almacenamiento</td><td>2 GB libres</td><td>8 GB libres</td><td>Rootfs + paquetes + margen para actualizaciones.</td></tr>
+            <tr><td>Arquitectura</td><td>arm64-v8a</td><td>arm64-v8a</td><td>Los rootfs de proot-distro son aarch64. En armv7 hay que buscar imágenes específicas.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid grid--2">
+        <div class="card">
+          <h3>Por fabricante</h3>
+          <ul class="check-list">
+            <li><strong>Android One / Pixel / A2 Lite:</strong> casi cero fricción. Solo el wake-lock.</li>
+            <li><strong>Xiaomi con MIUI/HyperOS:</strong> agresivo con el segundo plano. Hay que dar “sin restricciones”, autostart y bloquear la app en recientes.</li>
+            <li><strong>Samsung One UI:</strong> revisa “Poner apps en suspensión” y saca Termux de esa lista.</li>
+            <li><strong>Huawei / Honor sin GMS:</strong> Termux funciona igual; usa F-Droid o APK directo.</li>
+            <li><strong>Android 12+ en general:</strong> phantom process killer, se arregla por ADB (ver errores).</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>Lo que no cambia</h3>
+          <ul class="check-list">
+            <li>Ningún celular necesita root para esto.</li>
+            <li>Ninguno pierde la garantía.</li>
+            <li>En todos, desinstalar Termux borra el Linux.</li>
+            <li>En todos, el kernel es el de Android: no hay módulos.</li>
+            <li>En todos, el rendimiento depende del SoC: un Snapdragon 8xx vuela comparado con el 625.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout callout--warn">
+        <p><strong>Cuidado con los “Linux en Android” que piden root.</strong> Las apps que prometen Ubuntu con entorno gráfico completo y aceleración
+        suelen requerir root o un kernel modificado. <code>proot-distro</code> no lo necesita y por eso es la vía segura.</p>
+      </div>
+    </section>
+
+    <!-- ================= ALTERNATIVAS ================= -->
+    <section id="alternativas" class="section">
+      <h2>Alternativas</h2>
+      <p class="section__lead">Si este montaje no encaja con lo que buscas, estas son las opciones reales, ordenadas de “más parecido” a “otra cosa”.</p>
+
+      <div class="grid grid--3">
+        <article class="alt">
+          <h3>Alpine en Termux</h3>
+          <p class="alt__tag">Mismo método, menos peso</p>
+          <p><code>proot-distro install alpine</code>. Ocupa ~50 MB y arranca al instante. Ideal si solo quieres un Linux mínimo; a cambio, usa <code>apk</code> y musl en vez de glibc.</p>
+        </article>
+
+        <article class="alt">
+          <h3>Andronix</h3>
+          <p class="alt__tag">App de pago, todo incluido</p>
+          <p>Interfaz gráfica para instalar Ubuntu/Debian/Kali con escritorio. Más fácil, menos control y depende de su ecosistema. La versión gratuita está limitada.</p>
+        </article>
+
+        <article class="alt">
+          <h3>UserLAnd</h3>
+          <p class="alt__tag">Sin terminal, todo guiado</p>
+          <p>Instala distribuciones con asistentes y conexión VNC. Buena para quien no quiere teclear; menos flexible y con menos mantenimiento activo.</p>
+        </article>
+
+        <article class="alt">
+          <h3>Termux:X11</h3>
+          <p class="alt__tag">Escritorio gráfico</p>
+          <p>Servidor X para ver un entorno de escritorio real (XFCE, LXQt) del Debian de proot. Funciona, pero en un 625 va lento y consume RAM.</p>
+        </article>
+
+        <article class="alt">
+          <h3>postmarketOS / Ubuntu Touch</h3>
+          <p class="alt__tag">Linux de verdad, pero es otro sistema</p>
+          <p>Reemplaza Android por Linux. Rendimiento nativo y systemd, a cambio de desbloquear el bootloader, perder la garantía y quedarte sin apps de Android. El A2 Lite tiene soporte comunitario limitado.</p>
+        </article>
+
+        <article class="alt">
+          <h3>Raspberry Pi / mini-PC</h3>
+          <p class="alt__tag">El servidor que no se duerme</p>
+          <p>~5-15 W, siempre encendido, ARM o x86 real, systemd completo. Cuesta dinero, pero es la opción correcta para un servicio permanente.</p>
+        </article>
+
+        <article class="alt">
+          <h3>VPS gratuito o barato</h3>
+          <p class="alt__tag">Acceso desde cualquier lugar</p>
+          <p>Oracle Cloud, Fly.io, Hetzner (~4 €/mes). IP pública, 24/7, x86. Es lo que quieres si el punto es tener algo accesible desde internet.</p>
+        </article>
+
+        <article class="alt">
+          <h3>GitHub Codespaces</h3>
+          <p class="alt__tag">Linux en el navegador, gratis con límites</p>
+          <p>Un contenedor Linux listo en segundos, desde cualquier dispositivo. No es tu hardware y tiene horas gratuitas limitadas, pero para practicar es imbatible.</p>
+        </article>
+
+        <article class="alt">
+          <h3>WSL2 en Windows</h3>
+          <p class="alt__tag">Si tienes laptop a mano</p>
+          <p>Linux real con kernel propio, integrado con Windows. Mucho más rápido que proot, pero requiere un PC.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ================= CHULETA ================= -->
+    <section id="chuleta" class="section">
+      <h2>La chuleta </h2>
+      <p class="section__lead">Si ya tienes el alias, es una sola línea. Si no, tres.</p>
+
+      <div class="grid grid--2">
+        <div class="cmd">
+          <div class="cmd__bar"><span class="cmd__file">Termux — lo mínimo</span><button class="copy" type="button">Copiar</button></div>
+          <pre><code>proot-distro login debian
+fastfetch
+./demo.sh</code></pre>
+        </div>
+        <div class="cmd">
+          <div class="cmd__bar"><span class="cmd__file">Con alias</span><button class="copy" type="button">Copiar</button></div>
+          <pre><code>deb</code></pre>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Quiero…</th><th>Comando</th><th>Dónde</th></tr></thead>
+          <tbody>
+            <tr><td>Entrar a Debian</td><td><code>deb</code> o <code>proot-distro login debian</code></td><td>Termux</td></tr>
+            <tr><td>Salir de Debian</td><td><code>exit</code></td><td>Debian</td></tr>
+            <tr><td>Ver el sistema</td><td><code>fastfetch</code></td><td>Debian</td></tr>
+            <tr><td>Ver la identidad</td><td><code>./demo.sh</code></td><td>Debian</td></tr>
+            <tr><td>Servir una web</td><td><code>python3 -m http.server 8080</code></td><td>Debian</td></tr>
+            <tr><td>Volver a tmux</td><td><code>tmux attach -t web</code></td><td>Debian</td></tr>
+            <tr><td>Arrancar SSH</td><td><code>sshd</code></td><td>Termux</td></tr>
+            <tr><td>Evitar que se duerma</td><td><code>termux-wake-lock</code></td><td>Termux</td></tr>
+            <tr><td>Ver espacio libre</td><td><code>df -h</code></td><td>Ambos</td></tr>
+            <tr><td>Listar distribuciones</td><td><code>proot-distro list</code></td><td>Termux</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= DESHACER ================= -->
+    <section id="deshacer" class="section">
+      <h2>Deshacer todo</h2>
+      <p class="section__lead">El teléfono queda exactamente como estaba. Nada de esto toca el arranque, las particiones ni la garantía.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Quiero…</th><th>Comando</th><th>Qué se borra</th></tr></thead>
+          <tbody>
+            <tr><td>Borrar solo Debian</td><td><code>proot-distro remove debian</code></td><td>El rootfs y todo lo que instalaste dentro</td></tr>
+            <tr><td>Borrar todo</td><td>Desinstalar Termux desde Ajustes</td><td>Debian, Termux y sus datos</td></tr>
+            <tr><td>Recuperar espacio</td><td><code>proot-distro remove debian</code> + <code>pkg clean</code></td><td>Cachés e instalación</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout--info">
+        <p><strong>Haz una copia antes de borrar.</strong> Si tienes archivos dentro de Debian:</p>
+        <div class="cmd cmd--mini"><div class="cmd__bar"><span class="cmd__file">Termux</span><button class="copy" type="button">Copiar</button></div><pre><code>proot-distro backup debian --output ~/debian-backup.tar.gz</code></pre></div>
+        <p>Y para restaurar: <code>proot-distro restore ~/debian-backup.tar.gz</code>.</p>
+      </div>
+    </section>
+
+    <!-- ================= FAQ ================= -->
+    <section id="faq" class="section">
+      <h2>Preguntas frecuentes</h2>
+
+      <div class="faq">
+        <details>
+          <summary>¿Esto daña la batería o el teléfono?</summary>
+          <p>No por sí mismo. El desgaste viene de tener el teléfono enchufado 24/7 a tope de carga y caliente. Si lo vas a usar como servidor permanente, limita la carga al 80 % (muchos Android lo permiten) y déjalo ventilado.</p>
+        </details>
+        <details>
+          <summary>¿Necesito root o desbloquear el bootloader?</summary>
+          <p>No. Ese es justamente el punto de proot: todo ocurre en espacio de usuario. Por eso tampoco puedes cambiar cosas del sistema Android.</p>
+        </details>
+        <details>
+          <summary>¿Puedo usar el escritorio gráfico?</summary>
+          <p>Sí, con Termux:X11 y un entorno ligero como XFCE o LXQt. En un Snapdragon 625 funciona, pero lento. Para escribir código y usar la terminal, la línea de comandos es mejor experiencia.</p>
+        </details>
+        <details>
+          <summary>¿Se pierde todo si reinicio?</summary>
+          <p>No. El rootfs está en el almacenamiento del teléfono. Solo se pierde lo que esté en memoria (procesos, servidores corriendo). Vuelves a entrar con <code>deb</code> y sigue ahí.</p>
+        </details>
+        <details>
+          <summary>¿Puedo acceder desde fuera de mi casa?</summary>
+          <p>Sí, pero no abriendo puertos en el router. Usa un túnel: Tailscale (lo más simple), Cloudflare Tunnel o ngrok. Recuerda que el celular tiene que estar encendido y con red.</p>
+        </details>
+        <details>
+          <summary>¿Por qué Debian y no Ubuntu?</summary>
+          <p>Debian pesa menos, es más estable y es la base de Ubuntu. Para este uso, la diferencia es a favor de Debian. Ubuntu también está disponible en <code>proot-distro</code> si lo prefieres.</p>
+        </details>
+        <details>
+          <summary>¿Cuánto tarda en arrancar?</summary>
+          <p>De cero a prompt de Debian: 2-5 segundos. Comparado con una VM en el mismo teléfono (minutos), es la ventaja principal de proot.</p>
+        </details>
+        <details>
+          <summary>¿Puedo instalar Docker?</summary>
+          <p>No de forma funcional. Docker necesita privilegios y un daemon que proot no puede ofrecer. Existen alternativas (<code>podman</code> en modo rootless tampoco es fiable aquí). Para contenedores, usa una VPS.</p>
+        </details>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer__grid">
+        <div>
+          <p class="footer__brand">&gt;_ debian·bolsillo</p>
+          <p class="footer__text">Guía escrita a partir de un montaje real en un Xiaomi Mi A2 Lite con Android 10.
+          Los comandos son los mismos para cualquier Android arm64; los tiempos y la fluidez, no.</p>
+        </div>
+        <div>
+          <p class="footer__title">Enlaces oficiales</p>
+          <ul class="footer__links">
+            <li><a href="https://termux.dev/" target="_blank" rel="noopener noreferrer">Termux</a></li>
+            <li><a href="https://github.com/termux/proot-distro" target="_blank" rel="noopener noreferrer">proot-distro</a></li>
+            <li><a href="https://www.debian.org/" target="_blank" rel="noopener noreferrer">Debian</a></li>
+            <li><a href="https://f-droid.org/packages/com.termux/" target="_blank" rel="noopener noreferrer">Termux en F-Droid</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="footer__title">Aviso</p>
+          <p class="footer__text">Nada de lo aquí descrito modifica el arranque, las particiones ni la garantía del dispositivo.
+          Si algo falla, desinstalar Termux devuelve el teléfono a su estado original.</p>
+        </div>
+      </div>
+      <p class="footer__bottom">Hecho para leerse en el celular. · <button class="linkish" id="topBtn" type="button">Volver arriba ↑</button></p>
+    </footer>
+  </main>
+</div>
+
+<script src="js/app.js" defer></script>
+</body>
+</html>
